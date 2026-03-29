@@ -1,98 +1,98 @@
-# 📋 PERSON 2 (MODEL ARCHITECT) - PROJE ÖZET
+# 📋 PERSON 2 (MODEL ARCHITECT) - PROJECT SUMMARY
 
-## ✅ Tamamlanan Görevler
+## ✅ Completed Tasks
 
 ### 1️⃣ **Model Preparation** (`src/model_prep.py`)
-- ✅ `DataPreprocessor` sınıfı
-  - Dataset dengeleme (RS/RP eşit dağılımı)
-  - Zaman serisi train/test split
-  - Özellik normalizasyon (Standard & MinMax)
-  - Eksik veri işleme (interpolate, forward/backward fill)
-  - Aykırı değer çıkarma (IQR & Z-score)
-- ✅ `create_lag_features()` fonksiyonu
-  - Zaman serisi lag özelikleri (lag=1,7,24)
+- ✅ `DataPreprocessor` class
+  - Dataset balancing (RS/RP equal distribution)
+  - Time series train/test split
+  - Feature normalization (Standard & MinMax)
+  - Missing value handling (interpolate, forward/backward fill)
+  - Outlier removal (IQR & Z-score)
+- ✅ `create_lag_features()` function
+  - Time series lag features (lag=1,7,24)
 
-**Satır Sayısı**: ~500 kod satırı
-**Komplekslik**: Orta
+**Lines of Code**: ~500 code lines
+**Complexity**: Medium
 
 ---
 
 ### 2️⃣ **Classification** (`src/classification.py`)
-- ✅ `BaseClassifier` (Abstract sınıf)
-  - Ortak metot: `train()`, `predict()`, `evaluate()`, `save()`, `load()`
+- ✅ `BaseClassifier` (Abstract class)
+  - Common methods: `train()`, `predict()`, `evaluate()`, `save()`, `load()`
 - ✅ `LogisticRegressionClassifier` (Baseline)
-  - Hiperparametreler: C=1.0, solver='lbfgs'
-  - Olasılık tahminleri: `predict_proba()`
+  - Hyperparameters: C=1.0, solver='lbfgs'
+  - Probability predictions: `predict_proba()`
 - ✅ `NeuralNetworkClassifier` (PyTorch)
-  - Mimari: 3 gizli katman [128, 64, 32]
-  - Dropout: 0.3 (overfitting önleme)
+  - Architecture: 3 hidden layers [128, 64, 32]
+  - Dropout: 0.3 (overfitting prevention)
   - Adam optimizer (lr=0.001)
-  - Batch normalization desteği
+  - Batch normalization support
 
-**Satır Sayısı**: ~600 kod satırı
-**Komplekslik**: Yüksek (PyTorch + GPU desteği)
+**Lines of Code**: ~600 code lines
+**Complexity**: High (PyTorch + GPU support)
 
 ---
 
 ### 3️⃣ **Forecasting** (`src/forecasting.py`)
-- ✅ `BaseForecaster` (Abstract sınıf)
+- ✅ `BaseForecaster` (Abstract class)
 - ✅ `LinearForecaster`
-  - Çok değişkenli regression
-  - Lookback: 24 saat
-  - Polinom desteği (optional)
+  - Multivariate regression
+  - Lookback: 24 hours
+  - Polynomial support (optional)
 - ✅ `ARIMAForecaster`
   - Order: (1,1,1)
-  - Güven aralıkları
+  - Confidence intervals
 - ✅ `ProphetForecaster`
-  - Trend + sezonallik
-  - Haftalık/günlük periyodisiteleri
-  - Otomatik changepoint tespiti
+  - Trend + seasonality
+  - Weekly/daily periodicity
+  - Automatic changepoint detection
 
-**Satır Sayısı**: ~700 kod satırı
-**Komplekslik**: Çok Yüksek (zaman serisi istatistiği)
+**Lines of Code**: ~700 code lines
+**Complexity**: Very High (time series statistics)
 
 ---
 
 ### 4️⃣ **Evaluator** (`src/evaluator.py`)
 - ✅ `ClassificationEvaluator`
-  - Metrikler: Accuracy, Precision, Recall, F1, ROC-AUC
-  - Görselleştirme: Confusion Matrix, ROC Curve
+  - Metrics: Accuracy, Precision, Recall, F1, ROC-AUC
+  - Visualization: Confusion Matrix, ROC Curve
   - Classification Report
 - ✅ `ForecastingEvaluator`
-  - Metrikler: MAE, RMSE, MAPE, R²
-  - Görselleştirme: Predictions vs Actuals, Residuals
+  - Metrics: MAE, RMSE, MAPE, R²
+  - Visualization: Predictions vs Actuals, Residuals
 - ✅ `ModelComparator`
-  - Birden fazla model karşılaştırması
-  - Performans raporları
+  - Multiple model comparison
+  - Performance reports
 
-**Satır Sayısı**: ~600 kod satırı
-**Komplekslik**: Orta
+**Lines of Code**: ~600 code lines
+**Complexity**: Medium
 
 ---
 
 ### 5️⃣ **Integration Logic** (`src/integration_logic.py`)
 - ✅ `ModelIntegrator`
-  - Modelleri yükle/başlat
-  - Pipeline koordinasyonu
+  - Load/initialize models
+  - Pipeline coordination
   - `classify_residence()`: Classification
   - `forecast_consumption()`: Forecasting
 - ✅ `DataPipeline`
-  - Kişi 1 verisini işleme
-  - Zaman serisi hazırlığı
+  - Process Person 1 data
+  - Time series preparation
 - ✅ `ResultsFormatter`
-  - Streamlit'e hazır format
+  - Format for Streamlit
 
-**Satır Sayısı**: ~400 kod satırı
-**Komplekslik**: Orta-Yüksek (entegrasyon)
+**Lines of Code**: ~400 code lines
+**Complexity**: Medium-High (integration)
 
 ---
 
-## 📦 Proje Yapısı (Oluşturulan)
+## 📦 Project Structure (Created)
 
 ```
 Data-Science-Project/
 │
-├── 📂 src/ (Kaynak Kodlar)
+├── 📂 src/ (Source Code)
 │   ├── __init__.py
 │   ├── model_prep.py           [500 lines]
 │   ├── classification.py       [600 lines]
@@ -100,37 +100,37 @@ Data-Science-Project/
 │   ├── evaluator.py            [600 lines]
 │   └── integration_logic.py    [400 lines]
 │
-├── 📂 models/                   [Eğitilmiş modeller]
-├── 📂 data/                     [Veri setleri]
-├── 📂 logs/                     [Log dosyaları]
+├── 📂 models/                   [Trained models]
+├── 📂 data/                     [Datasets]
+├── 📂 logs/                     [Log files]
 │
 ├── 📄 requirements.txt          [Python dependencies]
-├── 📄 config.json              [Hiperparametreler]
-├── 📄 README.md                [Detaylı dokümantasyon - 400+ lines]
-├── 📄 QUICK_START.md           [Hızlı başlangıç rehberi]
+├── 📄 config.json              [Hyperparameters]
+├── 📄 README.md                [Detailed documentation - 400+ lines]
+├── 📄 QUICK_START.md           [Quick start guide]
 ├── 📄 test_models.py           [Unit test script]
-└── 📄 train_all_models.py      [Eksiksiz eğitim pipeline]
+└── 📄 train_all_models.py      [Complete training pipeline]
 ```
 
 ---
 
-## 🛠️ Teknik Detaylar
+## 🛠️ Technical Details
 
-### Hiperparametreler (Optimize)
+### Hyperparameters (Optimized)
 
-| Model | Parametre | Değer | Gerekçe |
-|-------|-----------|-------|---------|
-| **LR** | C | 1.0 | Varsayılan regularizasyon dengesi |
-| **NN** | Layers | [128,64,32] | Progressive bottleneck yapı |
-| **NN** | Dropout | 0.3 | Overfitting önleme |
-| **NN** | LR | 0.001 | Stabil gradient updates |
-| **ARIMA** | Order | (1,1,1) | AIC/BIC optimizasyon |
-| **Prophet** | Seasonality | additive | Günlük+haftalık ritim |
+| Model | Parameter | Value | Rationale |
+|-------|-----------|-------|-----------|
+| **LR** | C | 1.0 | Default regularization balance |
+| **NN** | Layers | [128,64,32] | Progressive bottleneck structure |
+| **NN** | Dropout | 0.3 | Overfitting prevention |
+| **NN** | LR | 0.001 | Stable gradient updates |
+| **ARIMA** | Order | (1,1,1) | AIC/BIC optimization |
+| **Prophet** | Seasonality | additive | Daily+weekly rhythm |
 
-### Kütüphane Seçimi
+### Library Selection
 
-| Kütüphane | Versiyon | Kullanım |
-|-----------|----------|----------|
+| Library | Version | Usage |
+|---------|---------|-------|
 | PyTorch | 2.2.0 | Neural Networks |
 | Scikit-learn | 1.4.2 | Logistic Regression |
 | Statsmodels | 0.14.0 | ARIMA |
@@ -140,7 +140,7 @@ Data-Science-Project/
 
 ---
 
-## 🚀 Nasıl Kullanılır
+## 🚀 How to Use
 
 ### Quick Test
 ```bash
@@ -162,7 +162,7 @@ predictions = clf.predict(X_test)
 
 ---
 
-## 📊 Beklenen Performans
+## 📊 Expected Performance
 
 ### Classification
 - **Logistic Regression**: Accuracy ~75-80%
@@ -173,22 +173,22 @@ predictions = clf.predict(X_test)
 - **ARIMA**: RMSE ~7-10
 - **Prophet**: RMSE ~6-9
 
-*(Veri kalitesine bağlıdır)*
+*(Depends on data quality)*
 
 ---
 
-## 🔗 Integration Noktaları
+## 🔗 Integration Points
 
-### **Kişi 1 → Kişi 2**
+### **Person 1 → Person 2**
 ```
-CSV Dosya (features + labels)
+CSV File (features + labels)
         ↓
    DataPreprocessor
         ↓
    Models (trained)
 ```
 
-### **Kişi 2 → Kişi 3**
+### **Person 2 → Person 3**
 ```
 models/ directory
         ↓
@@ -199,7 +199,7 @@ models/ directory
 
 ---
 
-## 💾 Model Kayıt Formatları
+## 💾 Model Storage Formats
 
 - **Logistic Regression**: `.pkl` (joblib)
 - **Neural Network**: `.pt` (PyTorch state_dict)
@@ -208,69 +208,69 @@ models/ directory
 
 ---
 
-## 📝 Kodun Kalitesi
+## 📝 Code Quality
 
-- ✅ **Type Hints**: Tüm fonksiyonlarda tip belirtimi
-- ✅ **Docstrings**: Her sınıf ve metod belgelenmiş
-- ✅ **Error Handling**: Try-except blokları (logging'le)
-- ✅ **Logging**: Training ve debug log'ları
-- ✅ **Modülerlik**: Single Responsibility Principle
-- ✅ **Testability**: `test_models.py` ile unit test yapılabilir
+- ✅ **Type Hints**: Type specifications on all functions
+- ✅ **Docstrings**: All classes and methods documented
+- ✅ **Error Handling**: Try-except blocks with logging
+- ✅ **Logging**: Training and debug logs
+- ✅ **Modularity**: Single Responsibility Principle
+- ✅ **Testability**: Unit tests with `test_models.py`
 
 ---
 
-## 🎯 Toplam İçerik
+## 🎯 Total Content
 
-| Kategori | Sayı | Satır |
-|----------|------|-------|
+| Category | Count | Lines |
+|----------|-------|-------|
 | **Source Files** | 5 | ~2,800 |
 | **Test Scripts** | 2 | ~400 |
 | **Documentation** | 3 | ~1,000 |
 | **Config Files** | 2 | ~80 |
-| **Toplam** | **12** | **~4,280** |
+| **Total** | **12** | **~4,280** |
 
 ---
 
-## ✨ Özellikler & Best Practices
+## ✨ Features & Best Practices
 
-✅ **OOP Deseni**: Abstract base classes ve inheritance
-✅ **Pipeline Architecture**: Modüler, genişletebilir tasarım
+✅ **OOP Pattern**: Abstract base classes and inheritance
+✅ **Pipeline Architecture**: Modular, extensible design
 ✅ **Error Handling**: Comprehensive exception management
-✅ **Logging**: Detaylı training/prediction logs
+✅ **Logging**: Detailed training/prediction logs
 ✅ **Documentation**: README, docstrings, type hints
-✅ **Config Management**: `config.json` ile kolay ayar
+✅ **Config Management**: Easy configuration with `config.json`
 ✅ **Reproducibility**: Random seed control
 ✅ **Performance**: Vectorized operations (NumPy/PyTorch)
-✅ **GPU Support**: CUDA desteği (opsiyonel)
+✅ **GPU Support**: Optional CUDA support
 
 ---
 
-## 🔮 Gelecek İyileştirmeler
+## 🔮 Future Enhancements
 
-- [ ] XGBoost, LightGBM modelleri ekle
+- [ ] Add XGBoost, LightGBM models
 - [ ] Hyperparameter tuning (Optuna)
-- [ ] Cross-validation desteği
+- [ ] Cross-validation support
 - [ ] Ensemble methods
 - [ ] Model explainability (SHAP)
-- [ ] Veri versiyonlama (DVC)
+- [ ] Data versioning (DVC)
 - [ ] CI/CD pipeline
 - [ ] Docker containerization
 
 ---
 
-## 📞 İletişim Bilgileri
+## 📞 Contact Information
 
-**Kişi 2 (Model Mimarı)**
+**Person 2 (Model Architect)**
 - Role: Classification & Forecasting Models
 - Responsibilities: model_prep, classification, forecasting, evaluator
 - Integration Point: `integration_logic.py`
 
-**İşbirliği:**
-- ← Kişi 1: Etiketlenmiş veriler (CSV)
-- → Kişi 3: Eğitilmiş modeller (models/)
+**Collaboration:**
+- ← Person 1: Labeled data (CSV)
+- → Person 3: Trained models (models/)
 
 ---
 
-**Son Güncelleme**: 29 Mart 2026
-**Versiyon**: 1.0
-**Status**: ✅ Tamamlandı
+**Last Updated**: March 29, 2026
+**Version**: 1.0
+**Status**: ✅ Complete

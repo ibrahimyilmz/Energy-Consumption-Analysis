@@ -53,43 +53,43 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 2. Kütüphaneleri Yükle
+### 2. Install Libraries
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**Temel Kütüphaneler:**
-- `numpy`, `pandas`: Veri işleme
-- `scikit-learn`: Makine öğrenmesi
-- `torch`: Derin öğrenme (PyTorch)
-- `statsmodels`: Zaman serisi (ARIMA)
-- `prophet`: Tahminleme (Facebook Prophet)
-- `joblib`: Model kayıt/yükleme
+**Core Libraries:**
+- `numpy`, `pandas`: Data processing
+- `scikit-learn`: Machine learning
+- `torch`: Deep learning (PyTorch)
+- `statsmodels`: Time series (ARIMA)
+- `prophet`: Forecasting (Facebook Prophet)
+- `joblib`: Model serialization
 
 ---
 
-## 📚 Person 2 (Sizin) Görevleriniz
+## 📚 Person 2 (Model Architect) Tasks
 
 ### 1. **Model Preparation** (`src/model_prep.py`)
 
-Person 1'den gelen veriyi eğitim için hazırlar.
+Prepares data from Person 1 for training.
 
-#### Sınıflar:
-- **`DataPreprocessor`**: Veri ön işleme
-  - `balance_dataset()`: Test setinde RS/RP dengeleme
-  - `train_test_split_timeseries()`: Zaman serisi bölünmesi
-  - `normalize_features()`: Özellikleri ölçeklendirme
-  - `handle_missing_values()`: Eksik veri işleme
-  - `remove_outliers()`: Aykırı değer çıkarma
+#### Classes:
+- **`DataPreprocessor`**: Data preprocessing
+  - `balance_dataset()`: Balance RS/RP in test set
+  - `train_test_split_timeseries()`: Time series splitting
+  - `normalize_features()`: Feature scaling
+  - `handle_missing_values()`: Missing data handling
+  - `remove_outliers()`: Outlier removal
 
-#### Kullanım Örneği:
+#### Usage Example:
 ```python
 from src.model_prep import DataPreprocessor
 
 preprocessor = DataPreprocessor(test_size=0.2, random_state=42)
 
-# Veri dengeleme
+# Data balancing
 df_balanced = preprocessor.balance_dataset(df, label_col='label')
 
 # Train/Test split
@@ -99,7 +99,7 @@ X_train, X_test, y_train, y_test, feature_names = preprocessor.train_test_split_
     label_col='label'
 )
 
-# Normalizasyon
+# Normalization
 X_train_norm, X_test_norm = preprocessor.normalize_features(X_train, X_test, method='standard')
 ```
 
@@ -107,22 +107,22 @@ X_train_norm, X_test_norm = preprocessor.normalize_features(X_train, X_test, met
 
 ### 2. **Classification** (`src/classification.py`)
 
-Evleri RS (Secondary Residence) veya RP (Primary Residence) olarak sınıflandırır.
+Classify houses as RS (Secondary Residence) or RP (Primary Residence).
 
-#### Sınıflar:
-- **`BaseClassifier`** (Abstract): Temel sınıflandırıcı arayüzü
+#### Classes:
+- **`BaseClassifier`** (Abstract): Base classifier interface
 
-- **`LogisticRegressionClassifier`**: Hızlı baseline model
-  - Hiperparametreler: `C=1.0, solver='lbfgs', max_iter=1000`
-  - Avantaj: Hızlı, explainable
+- **`LogisticRegressionClassifier`**: Fast baseline model
+  - Hyperparameters: `C=1.0, solver='lbfgs', max_iter=1000`
+  - Advantage: Fast, interpretable
 
-- **`NeuralNetworkClassifier`**: Derin sinir ağı (PyTorch)
-  - Mimari: 128 → 64 → 32 → 2 nöron
-  - Dropout: 0.3 (overfitting önleme)
+- **`NeuralNetworkClassifier`**: Deep neural network (PyTorch)
+  - Architecture: 128 → 64 → 32 → 2 neurons
+  - Dropout: 0.3 (overfitting prevention)
   - Optimizer: Adam (lr=0.001)
   - Epochs: 50-100
 
-#### Kullanım Örneği:
+#### Usage Example:
 ```python
 from src.classification import LogisticRegressionClassifier, NeuralNetworkClassifier
 
@@ -143,40 +143,40 @@ nn_classifier.train(X_train, y_train, epochs=50, batch_size=32, X_val=X_val, y_v
 nn_classifier.evaluate(X_test, y_test)
 nn_classifier.save('models/nn_classifier.pt')
 
-# Tahmin
+# Predictions
 predictions = lr_classifier.predict(X_test)
-probabilities = lr_classifier.predict_proba(X_test)  # Olasılıklar
+probabilities = lr_classifier.predict_proba(X_test)  # Probabilities
 ```
 
 ---
 
 ### 3. **Forecasting** (`src/forecasting.py`)
 
-Gelecekteki enerji tüketimini tahmin eder.
+Predict future energy consumption.
 
-#### Sınıflar:
-- **`BaseForecaster`** (Abstract): Temel tahmin arayüzü
+#### Classes:
+- **`BaseForecaster`** (Abstract): Base forecaster interface
 
-- **`LinearForecaster`**: Çok değişkenli linear regression
-  - Lookback: 24 saat
-  - Polinom desteği (opsiyonel)
+- **`LinearForecaster`**: Multivariate linear regression
+  - Lookback: 24 hours
+  - Polynomial support (optional)
 
 - **`ARIMAForecaster`**: ARIMA (AutoRegressive Integrated Moving Average)
   - Order: (1, 1, 1) [p=1, d=1, q=1]
-  - Güven aralıkları ile tahmin
+  - Confidence intervals for prediction
 
 - **`ProphetForecaster`**: Facebook Prophet
-  - Trend + sezonallik analizi
-  - Haftalık/günlük periyodisiteleri yakalar
-  - % 95 güven aralıkları
+  - Trend + seasonality analysis
+  - Weekly/daily periodicity capture
+  - 95% confidence intervals
 
-#### Zaman Serisi Özellikleri:
-- Lag özelikleri: `create_lag_features(data, lags=[1, 7, 24])`
-  - Lag-1: Bir saatlik geçmiş
-  - Lag-7: 7 saatlik geçmiş (haftalık ritim)
-  - Lag-24: 24 saatlik geçmiş (günlük ritim)
+#### Time Series Features:
+- Lag features: `create_lag_features(data, lags=[1, 7, 24])`
+  - Lag-1: One hour history
+  - Lag-7: Seven hour history (weekly rhythm)
+  - Lag-24: 24 hour history (daily rhythm)
 
-#### Kullanım Örneği:
+#### Usage Example:
 ```python
 from src.forecasting import LinearForecaster, ARIMAForecaster, ProphetForecaster
 
@@ -187,7 +187,7 @@ forecast = lf.forecast(steps=24, last_sequence=y_train[-24:])
 
 # ARIMA
 af = ARIMAForecaster(order=(1, 1, 1))
-af.fit(y_train)  # pd.Series veya np.array
+af.fit(y_train)  # pandas Series or numpy array
 forecast = af.forecast(steps=24)
 lower, upper = af.get_confidence_intervals(steps=24, alpha=0.05)
 
@@ -201,7 +201,7 @@ pf = ProphetForecaster(interval_width=0.95, seasonality_mode='additive')
 pf.fit(df_prophet)
 forecast, lower_bound, upper_bound = pf.forecast(steps=24, freq='h')
 
-# Model kayıt
+# Save models
 lf.save('models/linear_forecaster.pkl')
 af.save('models/arima_forecaster.pkl')
 pf.save('models/prophet_forecaster.pkl')
@@ -211,24 +211,24 @@ pf.save('models/prophet_forecaster.pkl')
 
 ### 4. **Evaluator** (`src/evaluator.py`)
 
-Model performansını değerlendirmek için araçlar.
+Tools for model performance evaluation.
 
-#### Sınıflar:
-- **`ClassificationEvaluator`**: Sınıflandırma metrikleri
-  - Metrikler: Accuracy, Precision, Recall, F1, ROC-AUC
-  - Görselleştirme: Confusion Matrix, ROC Curve
+#### Classes:
+- **`ClassificationEvaluator`**: Classification metrics
+  - Metrics: Accuracy, Precision, Recall, F1, ROC-AUC
+  - Visualization: Confusion Matrix, ROC Curve
 
-- **`ForecastingEvaluator`**: Tahminleme metrikleri
-  - Metrikler: MAE, RMSE, MAPE, R²
-  - Görselleştirme: Predictions vs Actuals, Residuals
+- **`ForecastingEvaluator`**: Forecasting metrics
+  - Metrics: MAE, RMSE, MAPE, R²
+  - Visualization: Predictions vs Actuals, Residuals
 
-- **`ModelComparator`**: Modeller arası karşılaştırma
+- **`ModelComparator`**: Model comparison
 
-#### Kullanım Örneği:
+#### Usage Example:
 ```python
 from src.evaluator import ClassificationEvaluator, ForecastingEvaluator, ModelComparator
 
-# Sınıflandırma Değerlendirme
+# Classification Evaluation
 clf_eval = ClassificationEvaluator()
 metrics = clf_eval.evaluate(y_test, y_pred, y_pred_proba)
 
@@ -240,13 +240,14 @@ fig_roc = clf_eval.plot_roc_curve()
 report = clf_eval.get_classification_report(labels=['RS', 'RP'])
 print(report)
 
-# Tahminleme Değerlendirme
+# Forecasting Evaluation
 fcst_eval = ForecastingEvaluator()
 fcst_metrics = fcst_eval.evaluate(y_test, y_pred)
 
 print(f"MAE: {fcst_metrics['mae']:.2f}")
 print(f"RMSE: {fcst_metrics['rmse']:.2f}")
 print(f"R2: {fcst_metrics['r2']:.4f}")
+```
 
 # Model Karşılaştırma
 comparator = ModelComparator()
