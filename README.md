@@ -16,7 +16,7 @@ By analyzing energy consumption data from Enedis:
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 Data-Science-Project/
@@ -69,7 +69,7 @@ pip install -r requirements.txt
 
 ---
 
-## 📚 Person 2 (Model Architect) Tasks
+## Person 2 (Model Architect) Tasks
 
 ### 1. **Model Preparation** (`src/model_prep.py`)
 
@@ -309,7 +309,7 @@ print(fcst_df)
 
 ---
 
-## 📊 Data Flow
+## Data Flow
 
 ```
 Person 1 (Raw Data)
@@ -334,7 +334,7 @@ TRAINED MODELS → Person 3 (Streamlit Dashboard)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Minimal Example
 
@@ -378,7 +378,7 @@ clf.save('models/classifier.pkl')
 
 ---
 
-## 📝 Technical Notes
+## Technical Notes
 
 ### Hyperparameters (Optimized)
 
@@ -407,27 +407,9 @@ Train: 1000 RS, 400 RP → Balanced: 400 RS, 400 RP (eğitim)
 Test: 200 RS, 100 RP → Balanced: 100 RS, 100 RP (değerlendirme)
 ```
 
-### Zaman Serisi Validation
 
-⚠️ **ÖNEMLI**: Train/Test split yapılırken data leakage'dan kaçınılır:
-- Kronolojik sıra korunur
-- TimeSeriesSplit kullanılır
-- Gelecek verileri training'e dahil edilmez
 
----
 
-## 🔍 Debugging ve Hata Ayıklama
-
-### Sık Karşılaşılan Hatalar
-
-| Hata | Çözüm |
-|------|-------|
-| `Model henüz eğitilmedi` | `.train()` veya `.fit()` çağrısından emin ol |
-| `Shape mismatch` | Train ve test özellikleri sayısını kontrol et |
-| `Out of Memory` | Batch size düşür, veriyi küçült |
-| `NaN değerler` | `handle_missing_values()` çağır, outlier kontrol et |
-
-### Log Dosyaları
 
 ```python
 import logging
@@ -444,7 +426,7 @@ logging.basicConfig(
 
 ---
 
-## 📚 Kaynaklar
+## References
 
 - **PyTorch Docs**: https://pytorch.org/docs/stable/index.html
 - **Scikit-learn**: https://scikit-learn.org/stable/
@@ -453,26 +435,6 @@ logging.basicConfig(
 
 ---
 
-## 👥 Ekip İletişimi
-
-### Person 1 → Person 2
-- **Format**: `data/labeled_data.csv` veya `data/person1_features.pkl`
-- **Sütunlar**: Feature_1 ... Feature_N + label (RS/RP)
-- **Beklenti**: Etiketlenmiş, normalize edilmemiş veri
-
-### Person 2 → Person 3
-- **Format**: Trained models in `models/` directory
-- **Interface**: `src/integration_logic.py` (ModelIntegrator sınıfı)
-- **Output**: Classification results + Forecasting predictions
-
----
-
-## 📞 İletişim Bilgileri
-
-Soru ve problem raporları için:
-- GitHub Issues
-- Email: [proje-email]
-- Team Chat: [slack/discord]
 
 ---
 
