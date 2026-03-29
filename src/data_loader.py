@@ -44,7 +44,8 @@ def load_consumption_data(
     selected_power_col = power_col or _find_column(df.columns, DEFAULT_POWER_CANDIDATES, required=True)
     selected_customer_col = customer_col or _find_column(df.columns, DEFAULT_ID_CANDIDATES, required=False)
 
-    parsed_time = pd.to_datetime(df[selected_time_col], errors="coerce")
+    # Normalize mixed timezone inputs to UTC, then store as timezone-naive timestamps.
+    parsed_time = pd.to_datetime(df[selected_time_col], errors="coerce", utc=True).dt.tz_convert(None)
     if parsed_time.isna().any():
         invalid_count = int(parsed_time.isna().sum())
         raise ValueError(
