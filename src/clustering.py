@@ -1,6 +1,6 @@
-from __future__ import annotations
+"""Clustering and feature extraction functionality."""
 
-from typing import Sequence
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -8,174 +8,170 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from .clustering_engine import DEFAULT_FEATURE_COLUMNS, _run_cluster_pipeline
-
-
-DEFAULT_CLUSTER_FEATURES: list[str] = [
-	*DEFAULT_FEATURE_COLUMNS,
-]
-
 
 def fourier_features(values: np.ndarray, n_components: int = 5) -> np.ndarray:
-	"""Extract Fourier features using FFT."""
-	fft_values = np.fft.rfft(values - np.mean(values))
-	magnitudes = np.abs(fft_values)
-	top_indices = np.argsort(magnitudes)[-n_components:]
-	return magnitudes[top_indices[::-1]]
+    """
+    Extract Fourier features using FFT.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        Input timeseries
+    n_components : int
+        Number of frequency components to extract
+
+    Returns
+    -------
+    np.ndarray
+        Magnitude of top frequency components
+    """
+    fft_values = np.fft.rfft(values - np.mean(values))
+    magnitudes = np.abs(fft_values)
+    top_indices = np.argsort(magnitudes)[-n_components:]
+    return magnitudes[top_indices[::-1]]
 
 
 def extract_consumption_features(
-	df: pd.DataFrame,
-	customer_col: str = "customer_id",
-	time_col: str = "timestamp",
-	power_col: str = "power_kw",
+    df: pd.DataFrame,
+    customer_col: str = "customer_id",
+    time_col: str = "timestamp",
+    power_col: str = "power_kw",
 ) -> pd.DataFrame:
-	"""Extract behavioral features from consumption data."""
-	# Convert to proper types at the beginning
-	df = df.copy()
-	
-	# Convert power to numeric
-	try:
-		df[power_col] = pd.to_numeric(df[power_col], errors='coerce')
-	except Exception as e:
-		raise ValueError(f"Failed to convert '{power_col}' to numeric. Error: {str(e)}")
-	
-	# Convert timestamp to datetime with multiple format attempts
-	try:
-		# Try multiple date formats
-		formats = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d']
-		datetime_converted = False
-		
-		for fmt in formats:
-			try:
-				df[time_col] = pd.to_datetime(df[time_col], format=fmt, errors='coerce')
-				non_null_count = df[time_col].notna().sum()
-				if non_null_count > len(df) * 0.8:  # At least 80% converted successfully
-					datetime_converted = True
-					break
-			except:
-				continue
-		
-		# If none of the formats worked, try pandas auto-detection
-		if not datetime_converted:
-			df[time_col] = pd.to_datetime(df[time_col], infer_datetime_format=True, errors='coerce')
-			non_null_count = df[time_col].notna().sum()
-			if non_null_count <= len(df) * 0.5:
-				raise ValueError(f"Could not convert '{time_col}' to datetime")
-	
-	except Exception as e:
-		raise ValueError(f"Failed to convert '{time_col}' to datetime. Tried formats: YYYY-MM-DD HH:MM:SS, YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY. Error: {str(e)}")
-	
-	# Check for invalid values
-	if df[time_col].isna().any():
-		invalid_count = df[time_col].isna().sum()
-		raise ValueError(f"Found {invalid_count} invalid datetime values in '{time_col}'. Ensure dates are in a standard format (e.g., 2023-11-01 or 01/11/2023)")
-	
-	if df[power_col].isna().any():
-		invalid_count = df[power_col].isna().sum()
-		raise ValueError(f"Found {invalid_count} invalid numeric values in '{power_col}'. All values must be numbers.")
-	
-	# Now safely use .dt accessor
-	df["hour"] = df[time_col].dt.hour
-	
-	features = []
+    """
+    Extract behavioral features from consumption data.
 
-	for customer_id, group in df.groupby(customer_col):
-		if len(group) < 24:
-			continue
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw consumption data
+    customer_col : str
+        Customer ID column name
+    time_col : str
+        Timestamp column name
+    power_col : str
+        Power consumption column name
 
-		power_values = group[power_col].values
-		df_group = group.copy()
+    Returns
+    -------
+    pd.DataFrame
+        Customer-level features
+    """
+    features = []
 
-		features_dict = {"customer_id": customer_id}
+    for customer_id, group in df.groupby(customer_col):
+        if len(group) < 24:
+            continue
 
-		# Consumption statistics
-		features_dict["mean_power"] = float(np.mean(power_values))
-		features_dict["std_power"] = float(np.std(power_values))
-		features_dict["min_power"] = float(np.min(power_values))
-		features_dict["max_power"] = float(np.max(power_values))
-		features_dict["occupancy_rate"] = float(
-			np.sum(power_values > np.percentile(power_values, 25)) / len(power_values)
-		)
+        power_values = group[power_col].values
+        df_group = group.copy()
+        df_group[time_col] = pd.to_datetime(df_group[time_col], utc=True)
+        
+        # Remove timezone if present
+        if df_group[time_col].dt.tz is not None:
+            df_group[time_col] = df_group[time_col].dt.tz_localize(None)
+        
+        df_group["hour"] = df_group[time_col].dt.hour
 
-		# Peak hours
-		morning_peak = df_group[(df_group["hour"] >= 6) & (df_group["hour"] < 9)][
-			power_col
-		].mean()
-		evening_peak = df_group[(df_group["hour"] >= 18) & (df_group["hour"] < 21)][
-			power_col
-		].mean()
+        features_dict = {"customer_id": customer_id}
 
-		features_dict["morning_peak"] = float(morning_peak) if not np.isnan(
-			morning_peak
-		) else 0.0
-		features_dict["evening_peak"] = float(evening_peak) if not np.isnan(
-			evening_peak
-		) else 0.0
+        # Consumption statistics
+        features_dict["mean_power"] = float(np.mean(power_values))
+        features_dict["std_power"] = float(np.std(power_values))
+        features_dict["min_power"] = float(np.min(power_values))
+        features_dict["max_power"] = float(np.max(power_values))
+        features_dict["occupancy_rate"] = float(
+            np.sum(power_values > np.percentile(power_values, 25)) / len(power_values)
+        )
 
-		# Fourier components
-		try:
-			fourier = fourier_features(power_values, n_components=5)
-			for i, comp in enumerate(fourier):
-				features_dict[f"fourier_{i}"] = float(comp)
-		except Exception:
-			for i in range(5):
-				features_dict[f"fourier_{i}"] = 0.0
+        # Peak hours
+        morning_peak = df_group[(df_group["hour"] >= 6) & (df_group["hour"] < 9)][
+            power_col
+        ].mean()
+        evening_peak = df_group[(df_group["hour"] >= 18) & (df_group["hour"] < 21)][
+            power_col
+        ].mean()
 
-		features.append(features_dict)
+        features_dict["morning_peak"] = float(morning_peak) if not np.isnan(
+            morning_peak
+        ) else 0.0
+        features_dict["evening_peak"] = float(evening_peak) if not np.isnan(
+            evening_peak
+        ) else 0.0
 
-	return pd.DataFrame(features)
+        # Fourier components
+        try:
+            fourier = fourier_features(power_values, n_components=5)
+            for i, comp in enumerate(fourier):
+                features_dict[f"fourier_{i}"] = float(comp)
+        except Exception:
+            for i in range(5):
+                features_dict[f"fourier_{i}"] = 0.0
+
+        features.append(features_dict)
+
+    return pd.DataFrame(features)
 
 
 def perform_clustering(
-	features_df: pd.DataFrame, n_clusters: int = 3, use_pca: bool = True
+    features_df: pd.DataFrame, n_clusters: int = 3, use_pca: bool = True
 ) -> tuple:
-	"""Perform K-Means clustering."""
-	X = features_df.iloc[:, 1:].values
-	scaler = StandardScaler()
-	X_scaled = scaler.fit_transform(X)
+    """
+    Perform K-Means clustering.
 
-	if use_pca and X_scaled.shape[1] > 2:
-		pca = PCA(n_components=min(10, X_scaled.shape[1]))
-		X_scaled = pca.fit_transform(X_scaled)
+    Parameters
+    ----------
+    features_df : pd.DataFrame
+        Feature matrix with customer_id in first column
+    n_clusters : int
+        Number of clusters
+    use_pca : bool
+        Whether to apply PCA first
 
-	kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-	labels = kmeans.fit_predict(X_scaled)
+    Returns
+    -------
+    tuple
+        (cluster_labels, scaler, kmeans_model)
+    """
+    # Extract features (exclude customer_id)
+    X = features_df.iloc[:, 1:].values
 
-	return labels, scaler, kmeans
+    # Standardize
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Optional PCA
+    if use_pca and X_scaled.shape[1] > 2:
+        pca = PCA(n_components=min(10, X_scaled.shape[1]))
+        X_scaled = pca.fit_transform(X_scaled)
+
+    # K-Means
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    labels = kmeans.fit_predict(X_scaled)
+
+    return labels, scaler, kmeans
 
 
 def apply_pca_2d(
-	features_df: pd.DataFrame,
+    features_df: pd.DataFrame,
 ) -> tuple:
-	"""Apply PCA for 2D visualization."""
-	X = features_df.iloc[:, 1:].values
-	scaler = StandardScaler()
-	X_scaled = scaler.fit_transform(X)
+    """
+    Apply PCA for 2D visualization.
 
-	pca = PCA(n_components=2)
-	X_pca = pca.fit_transform(X_scaled)
+    Parameters
+    ----------
+    features_df : pd.DataFrame
+        Feature matrix
 
-	return X_pca, pca
+    Returns
+    -------
+    tuple
+        (pca_data, pca_model)
+    """
+    X = features_df.iloc[:, 1:].values
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X_scaled)
 
-def assign_residence_labels(
-	features_df: pd.DataFrame,
-	*,
-	customer_col: str = "customer_id",
-	feature_cols: Sequence[str] | None = None,
-	n_clusters: int = 2,
-	n_components: int = 2,
-	random_state: int = 42,
-) -> pd.DataFrame:
-	"""Apply StandardScaler + PCA + KMeans, then map clusters to RS/RP labels."""
-	selected_cols = list(feature_cols or DEFAULT_CLUSTER_FEATURES)
-	return _run_cluster_pipeline(
-		features_df,
-		feature_cols=selected_cols,
-		customer_col=customer_col,
-		n_components=n_components,
-		n_clusters=n_clusters,
-		random_state=random_state,
-	)
-
+    return X_pca, pca

@@ -8,6 +8,45 @@ from src.clustering import extract_consumption_features, perform_clustering, app
 from src.data_loader import load_consumption_data
 
 
+def clean_data_for_clustering(df):
+    """Clean and validate data before clustering."""
+    df = df.copy()
+    
+    # Convert timestamp to datetime with error handling
+    if 'timestamp' in df.columns:
+        # First fix incomplete dates like "2023-11-0" → "2023-11-01"
+        df['timestamp'] = df['timestamp'].astype(str).str.strip()
+        
+        def fix_date(d):
+            if isinstance(d, str) and '-' in d:
+                parts = d.split('-')
+                if len(parts) == 3 and len(parts[2]) == 1:
+                    return f"{parts[0]}-{parts[1]}-0{parts[2]}"
+            return d
+        
+        df['timestamp'] = df['timestamp'].apply(fix_date)
+        
+        # Convert to datetime, handling timezone-aware datetimes
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce', utc=True)
+        
+        # Strip timezone information (convert to naive UTC)
+        if df['timestamp'].dt.tz is not None:
+            df['timestamp'] = df['timestamp'].dt.tz_localize(None)
+    
+    # Convert power_kw to numeric
+    if 'power_kw' in df.columns:
+        df['power_kw'] = pd.to_numeric(df['power_kw'], errors='coerce')
+    
+    # Convert customer_id to numeric
+    if 'customer_id' in df.columns:
+        df['customer_id'] = pd.to_numeric(df['customer_id'], errors='coerce')
+    
+    # Drop rows with NaN in critical columns
+    df = df.dropna(subset=['customer_id', 'timestamp', 'power_kw'])
+    
+    return df
+
+
 def render_clustering_tab():
     """Render clustering workflow interface."""
     st.header("🎯 Clustering")
@@ -58,30 +97,18 @@ def render_clustering_tab():
                     if missing_cols:
                         st.error(f"❌ Missing columns: {', '.join(missing_cols)}\n\nExpected: customer_id, timestamp, power_kw")
                     else:
-                        # Validate data types
-                        df_check = df.copy()
+                        # Clean data before clustering (fix dates, convert types, remove NaN)
+                        df_clean = clean_data_for_clustering(df)
                         
-                        # Check power_kw is numeric
-                        try:
-                            pd.to_numeric(df_check['power_kw'], errors='coerce')
-                            if pd.to_numeric(df_check['power_kw'], errors='coerce').isna().sum() > len(df_check) * 0.5:
-                                st.error("❌ Error: More than 50% of 'power_kw' values are non-numeric. Please check your data.")
-                        except:
-                            st.error("❌ Error: 'power_kw' column must contain numeric values.")
-                        
-                        # Try datetime conversion to validate format
-                        try:
-                            pd.to_datetime(df_check['timestamp'], errors='coerce')
-                            if pd.to_datetime(df_check['timestamp'], errors='coerce').isna().sum() > len(df_check) * 0.5:
-                                st.error("❌ Error: More than 50% of 'timestamp' values have invalid datetime format.\n\nExpected format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS")
-                        except:
-                            st.error("❌ Error: 'timestamp' column has invalid format.")
-                        
-                        features_df = extract_consumption_features(df)
-                        st.session_state.features = features_df
-                        st.success(f"✅ Extracted {len(features_df)} customer profiles")
+                        if len(df_clean) == 0:
+                            st.error("❌ No valid data after cleaning. Check your column formats.")
+                        else:
+                            st.info(f"📊 Cleaned data: {len(df)} → {len(df_clean)} rows (removed invalid entries)")
+                            features_df = extract_consumption_features(df_clean)
+                            st.session_state.features = features_df
+                            st.success(f"✅ Extracted {len(features_df)} customer profiles")
                 except Exception as e:
-                    st.error(f"❌ Error: {str(e)}\n\n💡 Hint: Check that your data has correct column formats:\n- customer_id: numeric\n- timestamp: date/datetime\n- power_kw: numeric")
+                    st.error(f"❌ Error: {str(e)}\n\n💡 Hint: Ensure your data has:\n- customer_id: numeric\n- timestamp: date format (YYYY-MM-DD)\n- power_kw: numeric values")
 
         if st.session_state.features is not None:
             st.divider()
