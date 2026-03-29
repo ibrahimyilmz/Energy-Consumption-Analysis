@@ -429,7 +429,6 @@ class ProphetForecaster(BaseForecaster):
             interval_width=interval_width,
             seasonality_mode=seasonality_mode,
             changepoint_prior_scale=0.05,
-            seasonality_scale=10,
             yearly_seasonality=False,  # Günlük ve haftalık sezonallik yeterli
             weekly_seasonality=True,
             daily_seasonality=True
@@ -458,13 +457,28 @@ class ProphetForecaster(BaseForecaster):
             if 'ds' not in X_train.columns or 'y' not in X_train.columns:
                 raise ValueError("DataFrame 'ds' (datetime) ve 'y' (value) sütunlarını içermeli")
             
-            # Train model (Prophet suppress_stdout parameter'ı kullanır)
-            with open('/dev/null', 'w') as devnull:
-                import sys
+            # Train model (suppress output for Windows compatibility)
+            import os
+            import sys
+            
+            if os.name == 'nt':  # Windows
+                # Use subprocess redirect on Windows
+                from subprocess import DEVNULL
                 old_stdout = sys.stdout
-                sys.stdout = devnull
+                old_stderr = sys.stderr
+                sys.stdout = open(os.devnull, 'w')
+                sys.stderr = open(os.devnull, 'w')
                 self.model.fit(X_train)
+                sys.stdout.close()
+                sys.stderr.close()
                 sys.stdout = old_stdout
+                sys.stderr = old_stderr
+            else:  # Unix/Linux/Mac
+                with open('/dev/null', 'w') as devnull:
+                    old_stdout = sys.stdout
+                    sys.stdout = devnull
+                    self.model.fit(X_train)
+                    sys.stdout = old_stdout
             
             self.is_trained = True
             
