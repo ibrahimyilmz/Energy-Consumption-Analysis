@@ -12,11 +12,26 @@ def render_clustering_tab():
     """Render clustering workflow interface."""
     st.header("🎯 Clustering")
 
-    uploaded_file = st.file_uploader("Upload CSV with consumption data", type="csv")
+    uploaded_file = st.file_uploader("Upload CSV with consumption data", type=["csv", "xlsx"])
 
     if uploaded_file or st.session_state.synthetic_data is not None:
         if uploaded_file:
-            df = pd.read_csv(uploaded_file)
+            # Support both CSV and Excel
+            if uploaded_file.name.endswith('.xlsx'):
+                df = pd.read_excel(uploaded_file)
+            else:
+                df = pd.read_csv(uploaded_file)
+            # Auto-map common column names (Excel format support)
+            column_mapping = {
+                'id': 'customer_id',
+                'horodate': 'timestamp',
+                'valeur': 'power_kw',
+                'ID': 'customer_id',
+                'Horodate': 'timestamp',
+                'Valeur': 'power_kw',
+                'HORODATE': 'timestamp',
+            }
+            df = df.rename(columns=column_mapping)
             st.session_state.raw_data = df
         else:
             df = st.session_state.synthetic_data
@@ -31,15 +46,23 @@ def render_clustering_tab():
             st.metric("Date Range", f"{len(df) // 48} days approx")
 
         st.write(df.head())
+        
+        st.info("📋 Supports: CSV or Excel files\n\nColumn names (auto-mapped):\n- `id` → customer_id\n- `horodate` → timestamp\n- `valeur` → power_kw")
 
         if st.button("⚡ Extract Features", key="extract_btn"):
             with st.spinner("Extracting features..."):
                 try:
-                    features_df = extract_consumption_features(df)
-                    st.session_state.features = features_df
-                    st.success(f"Extracted {len(features_df)} customer profiles")
+                    # Validate required columns
+                    required_cols = {'customer_id', 'timestamp', 'power_kw'}
+                    missing_cols = required_cols - set(df.columns)
+                    if missing_cols:
+                        st.error(f"❌ Missing columns: {', '.join(missing_cols)}\n\nExpected: customer_id, timestamp, power_kw")
+                    else:
+                        features_df = extract_consumption_features(df)
+                        st.session_state.features = features_df
+                        st.success(f"✅ Extracted {len(features_df)} customer profiles")
                 except Exception as e:
-                    st.error(f"Error: {e}")
+                    st.error(f"❌ Error: {str(e)}")
 
         if st.session_state.features is not None:
             st.divider()
