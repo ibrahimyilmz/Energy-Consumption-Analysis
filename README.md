@@ -1,10 +1,5 @@
 # Data Science Project - Energy Consumption Analysis and Forecasting
 
-**Team Division:**
-- **Person 1**: Data Architect and Clustering Expert
-- **Person 2**: Model Architect (Classification & Forecasting) ← **You are here**
-- **Person 3**: Integrator and Generative AI Expert
-
 ---
 
 ## 📋 Project Overview
@@ -69,11 +64,11 @@ pip install -r requirements.txt
 
 ---
 
-## Person 2 (Model Architect) Tasks
+## Modeling and Integration Tasks
 
 ### 1. **Model Preparation** (`src/model_prep.py`)
 
-Prepares data from Person 1 for training.
+Prepares labeled and engineered data for training.
 
 #### Classes:
 - **`DataPreprocessor`**: Data preprocessing
@@ -263,7 +258,7 @@ fig = comparator.plot_model_comparison(model_type='forecasting', metric='mae')
 
 ### 5. **Integration Logic** (`src/integration_logic.py`)
 
-Integration layer that combines the work of three team members.
+Integration layer that combines data processing, model inference, and result formatting.
 
 #### Classes:
 - **`ModelIntegrator`**: Load and run all models
@@ -271,8 +266,8 @@ Integration layer that combines the work of three team members.
   - Coordinate pipeline
   - Return results
 
-- **`DataPipeline`**: Prepare Person 1's data
-  - `process_person1_data()`: Process labeled data
+- **`DataPipeline`**: Prepare input data
+  - `process_input_data()`: Process labeled data
   - `process_timeseries_for_forecast()`: Prepare time series
 
 - **`ResultsFormatter`**: Format results for Streamlit
@@ -289,9 +284,9 @@ integrator.load_classification_model('models/lr_classifier.pkl', model_type='log
 integrator.load_forecasting_model('arima', 'models/arima_forecaster.pkl')
 integrator.load_feature_scaler('models/scaler.pkl')
 
-# 3. Process Person 1's data
+# 3. Process labeled input data
 pipeline = DataPipeline()
-X_features, y_labels, feature_names = pipeline.process_person1_data(df_from_person1)
+X_features, y_labels, feature_names = pipeline.process_input_data(df_labeled_input)
 
 # 4. Classify residences
 clf_results = integrator.classify_residence(X_features, feature_names)
@@ -302,7 +297,7 @@ timeseries = pipeline.process_timeseries_for_forecast(df_timeseries)
 fcst_results = integrator.forecast_consumption(timeseries, steps=24, model_name='arima')
 fcst_df = ResultsFormatter.format_forecast_results(fcst_results)
 
-# 6. Send to Streamlit (to be used by Person 3)
+# 6. Send to Streamlit for dashboard display
 print(clf_df)
 print(fcst_df)
 ```
@@ -312,12 +307,12 @@ print(fcst_df)
 ## Data Flow
 
 ```
-Person 1 (Raw Data)
+RAW DATA
     ↓
     → Extract features (PCA, Fourier, etc.)
     → Add RS/RP labels
     ↓
-LABELED DATA → Person 2 (Model Training)
+LABELED DATA → MODEL TRAINING
                 ↓
                 1. DataPreprocessor: Balancing + Normalization
                 2. Classification: RS/RP Classification
@@ -325,7 +320,7 @@ LABELED DATA → Person 2 (Model Training)
                 4. Evaluator: Performance evaluation
                 5. Save models (models/)
                 ↓
-TRAINED MODELS → Person 3 (Streamlit Dashboard)
+TRAINED MODELS → STREAMLIT DASHBOARD
                 ↓
                 → Interactive UI (Tabs)
                 → Dynamic Visualization
@@ -347,7 +342,7 @@ from src.evaluator import ClassificationEvaluator
 import numpy as np
 import pandas as pd
 
-# 2. Create synthetic data (Person 1 will provide real data)
+# 2. Create synthetic data (replace with real project data)
 np.random.seed(42)
 X_data = np.random.randn(1000, 15)
 y_data = np.random.choice(['RS', 'RP'], 1000)
@@ -440,4 +435,4 @@ logging.basicConfig(
 
 **Son Güncelleme**: 29 Mart 2026
 
-**Versiyon**: 1.0 (Person 2 Modelleri)
+**Versiyon**: 1.0 (Model Bilesenleri)
