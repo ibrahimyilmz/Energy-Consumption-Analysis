@@ -5,9 +5,12 @@
 ## 📋 Project Overview
 
 By analyzing energy consumption data from Enedis:
-1. **Classify houses**: Determine whether they are primary (RP) or secondary (RS) residences
-2. **Forecast future consumption**: Predict energy consumption 24 hours ahead
-3. **Interactive Dashboard**: Provide a Streamlit-based user interface
+1. **Build a data foundation**: Ingest raw metering data, convert physical units (kW -> kWh), engineer behavioral features, and generate unsupervised RS/RP labels
+2. **Classify houses**: Determine whether they are primary (RP) or secondary (RS) residences
+3. **Forecast future consumption**: Predict energy consumption 24 hours ahead
+4. **Interactive Dashboard**: Provide a Streamlit-based user interface
+
+The workflow starts with a dedicated data preprocessing and unsupervised labeling stage that produces the ground-truth labels consumed by downstream supervised models.
 
 ---
 
@@ -16,6 +19,10 @@ By analyzing energy consumption data from Enedis:
 ```
 Data-Science-Project/
 ├── src/                          # Source code
+│   ├── data_loader.py            # Raw data ingestion and kW to kWh conversion
+│   ├── features.py               # Behavioral feature extraction and Fourier analysis
+│   ├── clustering_engine.py      # PCA and K-Means implementation
+│   ├── clustering.py             # Automated labeling logic based on occupancy patterns
 │   ├── model_prep.py            # Data preparation and balancing
 │   ├── classification.py        # Classification models (RS/RP)
 │   ├── forecasting.py           # Forecasting models
@@ -100,7 +107,61 @@ X_train_norm, X_test_norm = preprocessor.normalize_features(X_train, X_test, met
 
 ---
 
-### 2. **Classification** (`src/classification.py`)
+### 2. **Data Preprocessing and Unsupervised Labeling** (`src/data_loader.py`, `src/features.py`, `src/clustering_engine.py`, `src/clustering.py`)
+
+This stage establishes the data foundation of the full pipeline. It transforms raw Enedis measurements into robust RS/RP labels used as ground truth by subsequent supervised classification tasks.
+
+#### 2.1 Data Ingestion and Physical Conversion (`src/data_loader.py`)
+
+- **Raw input schema**: Enedis CSV files commonly include:
+  - `id_pdl` (customer identifier)
+  - `horodate` (timestamp)
+  - `valeur` (power values)
+- **Smart column detection**: The loader resolves time/power/id columns from multiple candidate names, allowing ingestion of datasets with varying headers.
+- **Physical conversion (kW to kWh)**: For 30-minute intervals, energy is computed by:
+
+$$
+E_{kWh} = P_{kW} \times 0.5
+$$
+
+This converts instantaneous power values into interval energy before feature engineering.
+
+#### 2.2 Behavioral Feature Engineering (`src/features.py`)
+
+Thousands of 30-minute readings are aggregated into 11 customer-level behavioral features that summarize occupancy and lifestyle signatures.
+
+- **Occupancy signal**:
+
+$$
+occupancy\_rate = 1 - \text{low\_consumption\_day\_ratio}
+$$
+
+`low_consumption_day_ratio` is derived from a daily-energy threshold of `0.5` kWh to flag potentially uninhabited days.
+- **Weekend behavior**: `weekend_weekday_ratio` compares weekend and weekday mean consumption, which helps identify weekend-only holiday homes.
+- **Fourier rhythms**:
+  - `fft_daily_amp`: strength of the 24-hour cycle
+  - `fft_weekly_amp`: strength of the 7-day cycle
+  These are extracted with FFT to quantify periodic consumption structure.
+- **Statistical profiling**:
+  - `mean_daily_kwh` captures consumption scale
+  - `std_daily_kwh` captures variability/volatility
+
+#### 2.3 Unsupervised Machine Learning Pipeline (`src/clustering_engine.py` and `src/clustering.py`)
+
+The project constructs RS/RP ground-truth labels through the following steps:
+
+1. **Feature normalization** with `StandardScaler` so each feature has comparable influence.
+2. **PCA reduction** to two principal components (`pca_1`, `pca_2`) to improve cluster separability and enable 2D visualization.
+3. **K-Means clustering** to group households by behavioral similarity.
+4. **Automated labeling logic**:
+   - Cluster with lower mean `occupancy_rate` -> `RS` (Secondary Residence)
+   - Cluster with higher mean `occupancy_rate` -> `RP` (Primary Residence)
+
+The resulting labels are exported in `labeled_customers.csv` and become the reference targets for the classification models.
+
+---
+
+### 3. **Classification** (`src/classification.py`)
 
 Classify houses as RS (Secondary Residence) or RP (Primary Residence).
 
@@ -145,7 +206,7 @@ probabilities = lr_classifier.predict_proba(X_test)  # Probabilities
 
 ---
 
-### 3. **Forecasting** (`src/forecasting.py`)
+### 4. **Forecasting** (`src/forecasting.py`)
 
 Predict future energy consumption.
 
@@ -204,7 +265,7 @@ pf.save('models/prophet_forecaster.pkl')
 
 ---
 
-### 4. **Evaluator** (`src/evaluator.py`)
+### 5. **Evaluator** (`src/evaluator.py`)
 
 Tools for model performance evaluation.
 
@@ -256,7 +317,7 @@ fig = comparator.plot_model_comparison(model_type='forecasting', metric='mae')
 
 ---
 
-### 5. **Integration Logic** (`src/integration_logic.py`)
+### 6. **Integration Logic** (`src/integration_logic.py`)
 
 Integration layer that combines data processing, model inference, and result formatting.
 
