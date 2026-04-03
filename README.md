@@ -159,6 +159,55 @@ The project constructs RS/RP ground-truth labels through the following steps:
 
 The resulting labels are exported in `labeled_customers.csv` and become the reference targets for the classification models.
 
+#### 2.4 Data Lifecycle Summary (Raw -> Behavioral Identity)
+
+The data lifecycle moves from high-frequency raw measurements to a condensed behavioral identity per household.
+
+**1) Raw Data Structure**
+
+- **Granularity**: high-frequency time series with one measurement every 30 minutes.
+- **Format**: thousands of rows per customer (typically one row per half-hour interval over long horizons).
+- **Key columns**:
+  - `id_pdl` / `customer_id`: unique household identifier.
+  - `horodate` / `timestamp`: exact measurement datetime.
+  - `valeur` / `power_kw`: instantaneous power in kW.
+
+**2) Processing Stages**
+
+- **Stage 1 - Physical Conversion (`src/data_loader.py`)**
+  - Automatically detects column names across French/English naming variants.
+  - Converts power to energy with a 30-minute factor:
+
+$$
+E_{kWh} = P_{kW} \times 0.5
+$$
+
+- **Stage 2 - Behavioral Feature Engineering (`src/features.py`)**
+  - Aggregates high-frequency readings into daily totals.
+  - Marks low-energy days (<= `0.5` kWh/day) to estimate occupancy behavior.
+  - Computes occupancy via:
+
+$$
+occupancy\_rate = 1 - \text{low\_consumption\_day\_ratio}
+$$
+
+  - Applies FFT on 30-minute series to extract daily (24h) and weekly (7d) rhythms.
+
+- **Stage 3 - Unsupervised Labeling (`src/clustering_engine.py` and `src/clustering.py`)**
+  - Reduces behavioral space to `pca_1` and `pca_2` using PCA.
+  - Groups similar households with K-Means.
+  - Applies automated semantic mapping: the cluster with lower average `occupancy_rate` is assigned `RS`.
+
+**3) Processed Data Structure (`labeled_customers.csv`)**
+
+- **Granularity**: one row per customer (customer-level identity, not per timestamp).
+- **Representative columns**:
+  - `occupancy_rate`: proportion of active-use days.
+  - `weekend_weekday_ratio`: weekend-vs-weekday usage signature.
+  - `fft_daily_amp`: strength of 24-hour routine.
+  - `pca_1`, `pca_2`: 2D coordinates used for clustering/visualization.
+  - `label`: final unsupervised identity (`RS` or `RP`).
+
 ---
 
 ### 3. **Classification** (`src/classification.py`)
