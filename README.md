@@ -133,7 +133,7 @@ Thousands of 30-minute readings are aggregated into 11 customer-level behavioral
 - **Occupancy signal**:
 
 $$
-occupancy\_rate = 1 - \text{low\_consumption\_day\_ratio}
+\text{occupancy\_rate} = 1 - \text{low\_consumption\_day\_ratio}
 $$
 
 `low_consumption_day_ratio` is derived from a daily-energy threshold of `0.5` kWh to flag potentially uninhabited days.
